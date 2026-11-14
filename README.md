@@ -69,7 +69,7 @@ Il link “come funziona” in fondo alla home riapre la spiegazione.
 
 ## Album finale
 
-Dal **24 dicembre** compare sotto il calendario la card “Il nostro album”: riepilogo di tutte le domande con la tua risposta, l'esito, i punti e il totale, più un messaggio finale che cambia in base al punteggio. I testi dei messaggi sono segnaposto in `FINAL_MESSAGES` dentro `js/ui.js`: sostituiscili con i tuoi.
+Dal **24 dicembre** compare sotto il calendario la card “Il nostro album”: riepilogo di tutte le domande con la tua risposta, l'esito, i punti e il totale, più un messaggio finale che cambia in base al punteggio. Tutte le scritte modificabili — messaggi finali, titoli, stati, pulsanti, prefissi e nome del file — stanno in **`js/final-texts.js`** (`FINAL_MESSAGES` e `ALBUM_TEXT`): modifica solo quel file.
 
 Il pulsante **“Salva come immagine”** genera un PNG del riepilogo con il canvas nativo (nessuna libreria esterna): su iPhone apre il menu Condividi, da cui “Salva immagine”; se la condivisione non è disponibile mostra l'anteprima, da tenere premuta per salvarla. Il file resta tuo anche se il sito un giorno non fosse più online.
 
@@ -91,9 +91,9 @@ Se il link arriva da WhatsApp o Instagram, la schermata avvisa di riaprirlo in S
 
 ## Aggiornare il sito (service worker)
 
-Le domande cifrate sono network-first: rigenerare `questions.enc.json` basta, arriva al primo avvio online. Per codice, CSS e icone invece bypassa la cache:
+Le domande cifrate e `js/final-texts.js` sono network-first: per cambiare domande o scritte dell'album basta rigenerare/pushare, arrivano al primo avvio online. Per il resto del codice, CSS e icone invece bypassa la cache:
 
-1. alza `CACHE_NAME` in `service-worker.js` (es. `advent-calendar-v12` → `v13`);
+1. alza `CACHE_NAME` in `service-worker.js` (es. `advent-calendar-v14` → `v15`);
 2. ricarica due volte (la prima installa il nuovo SW, la seconda serve la cache nuova);
 3. se resta la versione vecchia, forza il controllo con `navigator.serviceWorker.getRegistration().then((r) => r.update())`, cancella i dati del sito da Safari (Impostazioni → Safari → Cancella dati e siti web) oppure rimuovi e riaggiungi l'icona dalla Home.
 

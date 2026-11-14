@@ -38,6 +38,7 @@ advent-calendar/
 │  ├─ ui.js                    # fatto — bootstrap, viste, eventi, gate passphrase
 │  ├─ intro.js                 # fatto — manifesto "come funziona" dopo installazione
 │  ├─ album-image.js           # fatto — riepilogo album disegnato su canvas
+│  ├─ final-texts.js           # fatto — scritte modificabili dell'album e dell'immagine
 │  └─ pwa.js                   # fatto — registrazione SW + schermata installazione
 ├─ scripts/
 │  └─ encrypt-questions.mjs    # fatto — cifra questions.json → questions.enc.json
@@ -297,7 +298,9 @@ L'intro spiega: una casella al giorno, due tentativi, indizio che dimezza, bonus
 
 - Si apre dal 24 dicembre (`isFinalUnlocked`) con la card in home; prima è nascosta.
 - Contenuto: punteggio totale (`score / maxScore`), data, messaggio finale, elenco dei 24 giorni con domanda, ultima risposta data (`entry.guesses`), stato (corretto / con indizio / sbagliato / non giocata / in sospeso), punti e — per le sbagliate — la risposta corretta.
-- Messaggi finali in `FINAL_MESSAGES` (`ui.js`), quattro fasce in proporzione al massimo (≥85%, ≥65%, ≥35%, resto) con testi **segnaposto** da sostituire.
+- Messaggi finali in `FINAL_MESSAGES` dentro `js/final-texts.js`, quattro fasce in proporzione al massimo (≥85%, ≥65%, ≥35%, resto) con testi **segnaposto** da sostituire.
+- Tutte le altre scritte dell'album e dell'immagine (titoli, sottotitolo, stati, prefissi “tu:”/“era:”, pulsanti, nome file, testi di condivisione) sono in `ALBUM_TEXT` nello stesso file, così si modificano in un unico punto.
+- `final-texts.js` è network-first: cambiare le scritte e pushare basta, senza alzare `CACHE_NAME`.
 - Nessun nuovo dato persistito: l'album deriva da stato + domande + data.
 
 ### Salvataggio come immagine
@@ -364,11 +367,11 @@ Quattro PNG generate con GDI+ (sfondo prugna, albero crema, stella ocra, tronco 
 
 `service-worker.js`, registrato da `js/pwa.js` con `navigator.serviceWorker.register("./service-worker.js", { scope: "./" })`.
 
-- `CACHE_NAME = "advent-calendar-v12"` (versionata a mano a ogni deploy).
-- `install`: precache di shell, CSS, font, tutti i moduli JS (`ui`, `intro`, `album-image`, …), `questions.enc.json`, manifest e icone; poi `skipWaiting()`.
+- `CACHE_NAME = "advent-calendar-v14"` (versionata a mano a ogni deploy).
+- `install`: precache di shell, CSS, font, tutti i moduli JS (`ui`, `intro`, `album-image`, `final-texts`, …), `questions.enc.json`, manifest e icone; poi `skipWaiting()`.
 - `activate`: elimina tutte le cache `advent-calendar-*` diverse da quella corrente, poi `clients.claim()`.
 - `fetch`, solo same-origin e solo `GET`:
-  - navigazioni e `questions.enc.json` → **network-first** con fallback alla cache (e `index.html` per le navigazioni offline);
+  - navigazioni, `questions.enc.json` e `final-texts.js` → **network-first** con fallback alla cache (e `index.html` per le navigazioni offline);
   - tutto il resto → **cache-first** con aggiornamento della cache alla prima risposta di rete.
 - `message { type: "SKIP_WAITING" }` per attivare subito una nuova versione.
 
@@ -399,7 +402,7 @@ Overlay `#install` in `index.html`, mostrato da `js/pwa.js`:
 - Copia di lavoro per il sito: branch locale `public`, che traccia `public/main`; `origin/main` (repo privato) resta archivio della storia completa. Non pushare `--all`/`--mirror` sul remoto pubblico, altrimenti si porta online anche la storia privata.
 - **Aggiornare le domande**: con il branch `public` attivo, modificare `questions.json` locale (ignorato da git), eseguire `node scripts/encrypt-questions.mjs`, committare `questions.enc.json` e pushare. Il file cifrato è network-first: la nuova versione arriva al primo avvio online.
 - **Aggiornare codice/CSS/icone**: alzare `CACHE_NAME` in `service-worker.js`, commit e push. Poi doppio reload; su iPhone chiudere le schede o rimuovere/riaggiungere l'icona se resta la versione vecchia.
-- **Verifica desktop**: DevTools → Application → Manifest (nome, icone, `standalone`, `start_url`), Service Workers (attivo, prova Offline), Cache Storage (`advent-calendar-v12` con `questions.enc.json`, CSS, JS, icone).
+- **Verifica desktop**: DevTools → Application → Manifest (nome, icone, `standalone`, `start_url`), Service Workers (attivo, prova Offline), Cache Storage (`advent-calendar-v14` con `questions.enc.json`, CSS, JS, icone).
 - **Verifica iPhone**: aprire in Safari, inserire la passphrase, controllare lo sblocco; “Aggiungi alla schermata Home”; attivare la modalità aereo e riaprire l'icona. L'app installata può chiedere la passphrase una volta anche se già inserita in Safari (storage separato).
 - **Privacy**: il repo è pubblico, quindi `questions.enc.json` è scaricabile, ma è cifrato AES-GCM con una passphrase che non sta nel repo. Base64 o hash non sarebbero una protezione reale. Per un accesso a prova di estraneo servirebbe un hosting con access control (es. Cloudflare Access), non necessario per un regalo di coppia.
 
