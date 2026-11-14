@@ -57,6 +57,22 @@ La passphrase non entra mai nel repo: all'apertura l'app la chiede una volta, sa
 
 Attenzione alla storia git: `questions.json` è già nei commit precedenti (dati di esempio). Prima di rendere pubblico il repo va rimosso dalla storia con `git filter-repo`/BFG o serve un repository nuovo; cancellarlo in un commit successivo non basta.
 
+## Prima apertura
+
+Al primo accesso si susseguono tre manifesti, una volta sola:
+
+1. la **passphrase** che sblocca le domande;
+2. la guida per **aggiungere l'app alla Home** (solo nel browser);
+3. **“Come funziona”**: una casella al giorno, due tentativi, indizio che dimezza il punteggio, bonus del 20 dicembre, recupero dei giorni saltati, album dal 24 dicembre.
+
+Il link “come funziona” in fondo alla home riapre la spiegazione.
+
+## Album finale
+
+Dal **24 dicembre** compare sotto il calendario la card “Il nostro album”: riepilogo di tutte le domande con la tua risposta, l'esito, i punti e il totale, più un messaggio finale che cambia in base al punteggio. I testi dei messaggi sono segnaposto in `FINAL_MESSAGES` dentro `js/ui.js`: sostituiscili con i tuoi.
+
+Il pulsante **“Salva come immagine”** genera un PNG del riepilogo con il canvas nativo (nessuna libreria esterna): su iPhone apre il menu Condividi, da cui “Salva immagine”; se la condivisione non è disponibile mostra l'anteprima, da tenere premuta per salvarla. Il file resta tuo anche se il sito un giorno non fosse più online.
+
 ## Installazione (iPhone e Android)
 
 L'app è la stessa; cambia solo il percorso di installazione, che la schermata di benvenuto mostra in base al dispositivo.
@@ -77,7 +93,7 @@ Se il link arriva da WhatsApp o Instagram, la schermata avvisa di riaprirlo in S
 
 Le domande cifrate sono network-first: rigenerare `questions.enc.json` basta, arriva al primo avvio online. Per codice, CSS e icone invece bypassa la cache:
 
-1. alza `CACHE_NAME` in `service-worker.js` (es. `advent-calendar-v10` → `v11`);
+1. alza `CACHE_NAME` in `service-worker.js` (es. `advent-calendar-v12` → `v13`);
 2. ricarica due volte (la prima installa il nuovo SW, la seconda serve la cache nuova);
 3. se resta la versione vecchia, forza il controllo con `navigator.serviceWorker.getRegistration().then((r) => r.update())`, cancella i dati del sito da Safari (Impostazioni → Safari → Cancella dati e siti web) oppure rimuovi e riaggiungi l'icona dalla Home.
 
@@ -93,4 +109,4 @@ La scrittura a mano usa prima **Segoe Script** dove è installato (Windows), poi
 npm test
 ```
 
-I test coprono confronto risposte, storage, regole di gioco, involucro cifrato, compatibilità Node ↔ WebCrypto e guida di installazione.
+I test coprono confronto risposte, storage, regole di gioco (incluso lo sblocco dell'album), involucro cifrato, compatibilità Node ↔ WebCrypto e guida di installazione.

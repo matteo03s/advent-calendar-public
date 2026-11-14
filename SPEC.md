@@ -36,6 +36,8 @@ advent-calendar/
 │  ├─ game.js                  # fatto — sblocco, tentativi, punteggi, stati giorno
 │  ├─ questions.js             # fatto — fetch + decifratura + validazione domande
 │  ├─ ui.js                    # fatto — bootstrap, viste, eventi, gate passphrase
+│  ├─ intro.js                 # fatto — manifesto "come funziona" dopo installazione
+│  ├─ album-image.js           # fatto — riepilogo album disegnato su canvas
 │  └─ pwa.js                   # fatto — registrazione SW + schermata installazione
 ├─ scripts/
 │  └─ encrypt-questions.mjs    # fatto — cifra questions.json → questions.enc.json
@@ -133,6 +135,7 @@ Modulo puro: nessun accesso al DOM, nessuna scrittura su storage (riceve e muta 
 |---|---|
 | `getUnlockedThrough(date)` | numero di giorni sbloccati (0–24) per la data locale |
 | `isDayUnlocked(day, date)` | boolean |
+| `isFinalUnlocked(date)` | true dal 24 dicembre in poi, quando `getUnlockedThrough` vale 24 |
 | `parseDebugDate(search)` / `resolveNow(search, fallback)` | `Date` dal `?debugDate=YYYY-MM-DD`, oppure `null` / `fallback` |
 | `getDayStatus(state, day, now)` | `{ day, status, unlocked, entry, usedHint, points, attempts, attemptsLeft, playable }` |
 | `getCalendar(state, now)` | array di 24 elementi come sopra |
@@ -259,6 +262,7 @@ Un solo documento, tre viste controllate da `hidden` (nessun routing, nessuna cr
 - **Casella bonus**: se `questionPoints` supera 10 la casella diventa carta kraft con stella disegnata e valore in evidenza. Con il JSON attuale è il giorno 20.
 - Le caselle concluse restano apribili in sola lettura per rivedere domanda, esito e risposta; non sono rigiocabili.
 - Testata: dedica manoscritta, titolo serif con sottolineatura a penna, data locale, nota sulle caselle aperte e tag di carta con il punteggio (`N/250`).
+- Dal 24 dicembre compare sotto la griglia la card **“Il nostro album”** (`#open-final`), nascosta prima; apre la vista finale.
 
 ### Schermata domanda
 
@@ -280,6 +284,29 @@ Un solo documento, tre viste controllate da `hidden` (nessun routing, nessuna cr
   Le etichette vivono nell'array `BANDS` di `ui.js` (unica fonte: la legenda in HTML viene riempita da lì). Le fasce raggiunte e quelle sotto sono colorate, la legenda evidenzia quella corrente come un tratto di evidenziatore (`aria-current="true"`).
 - Riga di sintesi (corrette / sbagliate / da giocare / ancora chiuse) e riga per giorno con stato e punti. Raggiungibile in ogni momento dalla tag del punteggio.
 - Se il massimo non è 250, il denominatore si adegua ma le fasce restano fisse.
+
+### Prima apertura: tre manifesti in sequenza
+
+1. `#gate` — passphrase (se manca la chiave sul dispositivo).
+2. `#install` — guida all'installazione (solo nel browser, non nell'app installata; si può saltare se già chiusa in passato).
+3. `#intro` — “come funziona”, mostrato **dopo** la chiusura dei primi due, una volta sola.
+
+L'intro spiega: una casella al giorno, due tentativi, indizio che dimezza, bonus del 20 dicembre, recupero dei giorni saltati, album dal 24 dicembre. Si chiude con “Si comincia”, X, backdrop o Esc e la scelta è ricordata in `localStorage` (`advent-calendar.intro-seen.v1`). Il link “come funziona” in fondo alla home la riapre. Come gli altri overlay: `role="dialog"`, `aria-modal`, sfondo `inert` + `aria-hidden`, focus trap, focus restituito.
+
+### Album finale
+
+- Si apre dal 24 dicembre (`isFinalUnlocked`) con la card in home; prima è nascosta.
+- Contenuto: punteggio totale (`score / maxScore`), data, messaggio finale, elenco dei 24 giorni con domanda, ultima risposta data (`entry.guesses`), stato (corretto / con indizio / sbagliato / non giocata / in sospeso), punti e — per le sbagliate — la risposta corretta.
+- Messaggi finali in `FINAL_MESSAGES` (`ui.js`), quattro fasce in proporzione al massimo (≥85%, ≥65%, ≥35%, resto) con testi **segnaposto** da sostituire.
+- Nessun nuovo dato persistito: l'album deriva da stato + domande + data.
+
+### Salvataggio come immagine
+
+- Implementato con **canvas nativo** (`js/album-image.js`), non html2canvas: zero dipendenze (html2canvas pesa ~200 KB), funziona offline e nella PWA, stesso output su iOS/Android/desktop, nessun problema di CORS o di layout DOM. Contro: il layout va disegnato a mano (due colonne 1–12 / 13–24, testi con wrapping misurato).
+- Immagine 1080 px di larghezza, altezza calcolata (~2200 px con 24 domande), sfondo carta, testata scura, punteggio e messaggio finale.
+- Salvataggio: `canvas.toBlob` → `File` → `navigator.share({ files })` se `navigator.canShare` lo supporta (iOS 15+ apre il menu Condividi, da cui “Salva immagine”). Se la condivisione non è disponibile o fallisce, si apre `#album-preview` con l'immagine: su iOS si tiene premuto e si sceglie “Salva immagine”; c'è anche un link “Scarica” per desktop. L'anteprima ha un pulsante “Condividi” quando i file sono supportati.
+- Nota iOS: `navigator.share` va invocato da un gesto utente; la preparazione del canvas è asincrona, quindi se la condivisione viene rifiutata si usa sempre il fallback dell'anteprima.
+- Verifica fatta in browser: immagine 1080×2216, data URL ~620 KB, anteprima e link di download funzionanti. La prova su PWA iOS reale resta da fare (menu Condividi/long-press).
 
 ### Movimento e accessibilità
 
@@ -337,8 +364,8 @@ Quattro PNG generate con GDI+ (sfondo prugna, albero crema, stella ocra, tronco 
 
 `service-worker.js`, registrato da `js/pwa.js` con `navigator.serviceWorker.register("./service-worker.js", { scope: "./" })`.
 
-- `CACHE_NAME = "advent-calendar-v10"` (versionata a mano a ogni deploy).
-- `install`: precache di shell, CSS, font, tutti i moduli JS, `questions.enc.json`, manifest e icone; poi `skipWaiting()`.
+- `CACHE_NAME = "advent-calendar-v12"` (versionata a mano a ogni deploy).
+- `install`: precache di shell, CSS, font, tutti i moduli JS (`ui`, `intro`, `album-image`, …), `questions.enc.json`, manifest e icone; poi `skipWaiting()`.
 - `activate`: elimina tutte le cache `advent-calendar-*` diverse da quella corrente, poi `clients.claim()`.
 - `fetch`, solo same-origin e solo `GET`:
   - navigazioni e `questions.enc.json` → **network-first** con fallback alla cache (e `index.html` per le navigazioni offline);
@@ -372,7 +399,7 @@ Overlay `#install` in `index.html`, mostrato da `js/pwa.js`:
 - Copia di lavoro per il sito: branch locale `public`, che traccia `public/main`; `origin/main` (repo privato) resta archivio della storia completa. Non pushare `--all`/`--mirror` sul remoto pubblico, altrimenti si porta online anche la storia privata.
 - **Aggiornare le domande**: con il branch `public` attivo, modificare `questions.json` locale (ignorato da git), eseguire `node scripts/encrypt-questions.mjs`, committare `questions.enc.json` e pushare. Il file cifrato è network-first: la nuova versione arriva al primo avvio online.
 - **Aggiornare codice/CSS/icone**: alzare `CACHE_NAME` in `service-worker.js`, commit e push. Poi doppio reload; su iPhone chiudere le schede o rimuovere/riaggiungere l'icona se resta la versione vecchia.
-- **Verifica desktop**: DevTools → Application → Manifest (nome, icone, `standalone`, `start_url`), Service Workers (attivo, prova Offline), Cache Storage (`advent-calendar-v10` con `questions.enc.json`, CSS, JS, icone).
+- **Verifica desktop**: DevTools → Application → Manifest (nome, icone, `standalone`, `start_url`), Service Workers (attivo, prova Offline), Cache Storage (`advent-calendar-v12` con `questions.enc.json`, CSS, JS, icone).
 - **Verifica iPhone**: aprire in Safari, inserire la passphrase, controllare lo sblocco; “Aggiungi alla schermata Home”; attivare la modalità aereo e riaprire l'icona. L'app installata può chiedere la passphrase una volta anche se già inserita in Safari (storage separato).
 - **Privacy**: il repo è pubblico, quindi `questions.enc.json` è scaricabile, ma è cifrato AES-GCM con una passphrase che non sta nel repo. Base64 o hash non sarebbero una protezione reale. Per un accesso a prova di estraneo servirebbe un hosting con access control (es. Cloudflare Access), non necessario per un regalo di coppia.
 
@@ -424,6 +451,10 @@ Nessun'altra incoerenza di data trovata: `updatedAt` è ISO UTC ma è solo infor
 - [x] Guida per piattaforma: iOS, Android e desktop, con icona maskable per Android
 - [x] `tests/pwa.test.js` — rilevamento piattaforma e testi delle guide
 - [x] Review date/fuso orario (timer di mezzanotte) e accessibilità (dialog modale, focus, contatore)
+- [x] Album finale dal 24 dicembre, con messaggi segnaposto modificabili
+- [x] Salvataggio immagine su canvas + Web Share/anteprima per iOS
+- [x] Intro “come funziona” dopo passphrase e installazione
+- [x] Test `isFinalUnlocked` e verifica canvas in browser
 - [x] Deploy su GitHub Pages — `https://matteo03s.github.io/advent-calendar-public/`
 - [x] Repo pubblico da snapshot orfano, senza `questions.json` nella storia
 - [ ] Test su iPhone reale (Safari + aggiunta a Home)
