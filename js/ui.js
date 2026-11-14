@@ -24,6 +24,7 @@ import { QuestionsLockedError, loadQuestions, unlockQuestions } from "./question
 import { registerServiceWorker, setupInstallHint } from "./pwa.js";
 import { setupIntro } from "./intro.js";
 import { createAlbumImage } from "./album-image.js";
+import { ALBUM_TEXT, FINAL_MESSAGES } from "./final-texts.js";
 
 // getMonth() è 0-based, come in game.js.
 const DECEMBER = 11;
@@ -33,14 +34,6 @@ const BANDS = [
   { min: 0, max: 149, label: "Sei na pippa" },
   { min: 150, max: 209, label: "Ci siamo quasi" },
   { min: 210, max: 250, label: "Brava scema" },
-];
-
-// Messaggi finali segnaposto: sostituisci i testi, le soglie sono in proporzione al massimo.
-const FINAL_MESSAGES = [
-  { minRatio: 0.85, text: "[Segnaposto] Il messaggio per un punteggio altissimo: scrivilo qui." },
-  { minRatio: 0.65, text: "[Segnaposto] Il messaggio per un bel punteggio: scrivilo qui." },
-  { minRatio: 0.35, text: "[Segnaposto] Il messaggio per un punteggio così così: scrivilo qui." },
-  { minRatio: 0, text: "[Segnaposto] Il messaggio per un punteggio basso: scrivilo qui." },
 ];
 
 const STAR_ICON =
@@ -123,9 +116,14 @@ const dom = {
   finalMax: $("final-max"),
   finalMessage: $("final-message"),
   finalList: $("final-list"),
+  albumHand: $("album-hand"),
+  albumTitle: $("album-title"),
+  albumFoot: $("album-foot"),
   saveAlbum: $("save-album"),
   saveHint: $("save-hint"),
   albumPreview: $("album-preview"),
+  albumPreviewTitle: $("album-preview-title"),
+  albumPreviewIntro: $("album-preview-intro"),
   albumPreviewImg: $("album-preview-img"),
   albumPreviewClose: $("album-preview-close"),
   albumShare: $("album-share"),
@@ -516,20 +514,20 @@ function buildAlbumRows(now) {
     const guesses = entry?.guesses ?? [];
     const answer = guesses.length ? guesses[guesses.length - 1] : "";
 
-    let status = "non giocata";
+    let status = ALBUM_TEXT.statuses.unplayed;
     let tone = "none";
     let pointsLabel = "—";
 
     if (day.status === DAY_STATUS.solved) {
-      status = day.usedHint ? "con indizio" : "corretto";
+      status = day.usedHint ? ALBUM_TEXT.statuses.hint : ALBUM_TEXT.statuses.solved;
       tone = day.usedHint ? "hint" : "ok";
       pointsLabel = `+${day.points}`;
     } else if (day.status === DAY_STATUS.failed) {
-      status = "sbagliato";
+      status = ALBUM_TEXT.statuses.failed;
       tone = "ko";
       pointsLabel = "0";
     } else if (entry) {
-      status = "in sospeso";
+      status = ALBUM_TEXT.statuses.playing;
     }
 
     return {
@@ -558,16 +556,17 @@ function albumRowElement(row) {
   question.textContent = row.question;
   const answer = document.createElement("span");
   answer.className = "album__answer";
-  answer.textContent = row.answer ? `tu: ${row.answer}` : "tu: —";
+  answer.textContent = row.answer
+    ? `${ALBUM_TEXT.answerPrefix}${row.answer}`
+    : ALBUM_TEXT.emptyAnswer;
   body.append(question, answer);
 
   if (row.tone === "ko" && row.correct) {
     const correct = document.createElement("span");
     correct.className = "album__correct";
-    correct.textContent = `era: ${row.correct}`;
+    correct.textContent = `${ALBUM_TEXT.correctPrefix}${row.correct}`;
     body.append(correct);
   }
-
   const status = document.createElement("span");
   status.className = "album__status";
   status.textContent = row.status;
@@ -590,8 +589,8 @@ function renderFinal(now = currentNow()) {
   const progress = getProgress(state, now, questions);
   const rows = buildAlbumRows(now);
 
-  dom.finalChip.textContent = `${progress.maxScore} punti`;
-  dom.finalDate.textContent = `${capitalize(dateFormatter.format(now))} · 24 giorni`;
+  dom.finalChip.textContent = `${progress.maxScore} ${ALBUM_TEXT.maxChipSuffix}`;
+  dom.finalDate.textContent = `${capitalize(dateFormatter.format(now))} · ${ALBUM_TEXT.dateSuffix}`;
   dom.finalScore.textContent = String(progress.score);
   dom.finalMax.textContent = `/ ${progress.maxScore}`;
   dom.finalMessage.textContent = finalMessageFor(progress.score, progress.maxScore);
@@ -616,11 +615,26 @@ function canShareFile(file) {
 
 async function shareAlbum(file) {
   try {
-    await navigator.share({ files: [file], title: "Il nostro calendario" });
+    await navigator.share({ files: [file], title: ALBUM_TEXT.shareTitle });
     return true;
   } catch (error) {
     return error?.name === "AbortError";
   }
+}
+
+// Applica una volta le scritte modificabili dell'album (js/final-texts.js).
+function applyAlbumText() {
+  dom.albumHand.textContent = ALBUM_TEXT.hand;
+  dom.albumTitle.textContent = ALBUM_TEXT.title;
+  dom.albumFoot.textContent = ALBUM_TEXT.foot;
+  dom.saveAlbum.textContent = ALBUM_TEXT.save;
+  dom.saveHint.textContent = ALBUM_TEXT.saveHint;
+  dom.albumPreviewTitle.textContent = ALBUM_TEXT.previewTitle;
+  dom.albumPreviewIntro.textContent = ALBUM_TEXT.previewIntro;
+  dom.albumShare.textContent = ALBUM_TEXT.share;
+  dom.albumDownload.textContent = ALBUM_TEXT.download;
+  dom.albumDownload.setAttribute("download", ALBUM_TEXT.fileName);
+  dom.albumPreviewImg.alt = ALBUM_TEXT.previewAlt;
 }
 
 function openAlbumPreview(dataUrl) {
@@ -652,7 +666,7 @@ async function handleSaveAlbum() {
   const progress = getProgress(state, now, questions);
   const label = dom.saveAlbum.textContent;
   dom.saveAlbum.disabled = true;
-  dom.saveAlbum.textContent = "Preparo l'immagine…";
+  dom.saveAlbum.textContent = ALBUM_TEXT.saving;
   albumFile = null;
 
   try {
@@ -668,7 +682,7 @@ async function handleSaveAlbum() {
     if (!blob) throw new Error("immagine non disponibile");
 
     if (typeof File === "function") {
-      albumFile = new File([blob], "calendario-avvento.png", { type: "image/png" });
+      albumFile = new File([blob], ALBUM_TEXT.fileName, { type: "image/png" });
       if (canShareFile(albumFile) && (await shareAlbum(albumFile))) return;
     }
 
@@ -930,6 +944,7 @@ async function init() {
   state = loadState();
   bindGrid();
   bindEvents();
+  applyAlbumText();
   renderHeader();
   renderHome();
   scheduleMidnightRefresh();

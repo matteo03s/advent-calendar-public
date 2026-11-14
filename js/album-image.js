@@ -1,4 +1,6 @@
 // Disegna il riepilogo dell'album su canvas: nessuna dipendenza, stesso output su desktop e iOS.
+import { ALBUM_TEXT } from "./final-texts.js";
+
 const SERIF = '"Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif';
 const HAND = '"Segoe Script", "Bradley Hand", "Bradley Hand ITC", "Noteworthy", "Caveat", cursive';
 const SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
@@ -77,10 +79,15 @@ function layoutColumn(ctx, rows) {
     const questionLines = wrapText(ctx, row.question, COL_W - 126, 4);
 
     ctx.font = `italic 24px ${SERIF}`;
-    const answerLines = wrapText(ctx, row.answer ? `tu: ${row.answer}` : "tu: —", COL_W - 50, 2);
+    const answerLines = wrapText(
+      ctx,
+      row.answer ? `${ALBUM_TEXT.answerPrefix}${row.answer}` : ALBUM_TEXT.emptyAnswer,
+      COL_W - 50,
+      2
+    );
 
     const correctLines = row.correct && row.tone === "ko"
-      ? wrapText(ctx, `era: ${row.correct}`, COL_W - 50, 2)
+      ? wrapText(ctx, `${ALBUM_TEXT.correctPrefix}${row.correct}`, COL_W - 50, 2)
       : [];
 
     const height =
@@ -187,11 +194,11 @@ export async function createAlbumImage({ score, maxScore, message, dateLabel, ro
   ctx.textBaseline = "top";
   ctx.fillStyle = COLORS.terraLight;
   ctx.font = `30px ${HAND}`;
-  ctx.fillText("24 giorni insieme", PAD, 48);
+  ctx.fillText(ALBUM_TEXT.image.hand, PAD, 48);
 
   ctx.fillStyle = COLORS.cream;
   ctx.font = `56px ${SERIF}`;
-  ctx.fillText("Calendario dell'Avvento", PAD, 88);
+  ctx.fillText(ALBUM_TEXT.image.title, PAD, 88);
 
   ctx.fillStyle = "rgba(246, 236, 215, 0.68)";
   ctx.font = `24px ${SERIF}`;
@@ -200,7 +207,7 @@ export async function createAlbumImage({ score, maxScore, message, dateLabel, ro
   ctx.textAlign = "right";
   ctx.fillStyle = COLORS.terraLight;
   ctx.font = `22px ${HAND}`;
-  ctx.fillText("punteggio", WIDTH - PAD, 92);
+  ctx.fillText(ALBUM_TEXT.image.scoreLabel, WIDTH - PAD, 92);
 
   ctx.fillStyle = COLORS.gold;
   ctx.font = `58px ${SERIF}`;
@@ -225,7 +232,7 @@ export async function createAlbumImage({ score, maxScore, message, dateLabel, ro
 
   ctx.fillStyle = COLORS.soft;
   ctx.font = `26px ${HAND}`;
-  ctx.fillText("Fatto a mano, un giorno alla volta.", WIDTH / 2, footerTop + 6);
+  ctx.fillText(ALBUM_TEXT.image.foot, WIDTH / 2, footerTop + 6);
 
   return canvas;
 }

@@ -1,5 +1,5 @@
 // Service worker: shell offline con cache versionata.
-const CACHE_NAME = "advent-calendar-v12";
+const CACHE_NAME = "advent-calendar-v14";
 
 // Percorsi relativi allo script: funzionano anche in una sottocartella di GitHub Pages.
 
@@ -17,6 +17,7 @@ const PRECACHE_URLS = [
   "./js/pwa.js",
   "./js/intro.js",
   "./js/album-image.js",
+  "./js/final-texts.js",
   "./questions.enc.json",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
@@ -107,7 +108,11 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (request.mode === "navigate" || url.pathname.endsWith("questions.enc.json")) {
+  if (
+    request.mode === "navigate" ||
+    url.pathname.endsWith("questions.enc.json") ||
+    url.pathname.endsWith("final-texts.js")
+  ) {
     event.respondWith(networkFirst(request));
     return;
   }
