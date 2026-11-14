@@ -1,5 +1,5 @@
 // Service worker: shell offline con cache versionata.
-const CACHE_NAME = "advent-calendar-v10";
+const CACHE_NAME = "advent-calendar-v12";
 
 // Percorsi relativi allo script: funzionano anche in una sottocartella di GitHub Pages.
 
@@ -15,6 +15,8 @@ const PRECACHE_URLS = [
   "./js/questions.js",
   "./js/ui.js",
   "./js/pwa.js",
+  "./js/intro.js",
+  "./js/album-image.js",
   "./questions.enc.json",
   "./manifest.webmanifest",
   "./icons/icon-192.png",

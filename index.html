@@ -49,9 +49,15 @@
           <p class="alert" id="load-error" role="alert" hidden></p>
           <p class="home__hint" id="home-hint"></p>
           <ol class="grid" id="grid"></ol>
+          <button class="album-cta" id="open-final" type="button" hidden>
+            <span class="album-cta__hand">dal 24 dicembre</span>
+            <span class="album-cta__title">Il nostro album</span>
+            <span class="album-cta__note">Tutte le domande, le risposte e il punteggio.</span>
+          </button>
           <p class="home__footer">Se salti un giorno non è un problema: la casella resta lì ad aspettarti.</p>
           <p class="home__install">
             <button class="link-btn" id="install-help" type="button" hidden>come installarla sulla Home</button>
+            <button class="link-btn" id="intro-help" type="button" hidden>come funziona</button>
           </p>
         </section>
 
@@ -160,6 +166,41 @@
 
           <ol class="report" id="report-list"></ol>
         </section>
+
+        <!-- Album finale: si apre dal 24 dicembre. -->
+        <section class="view view--final" id="view-final" aria-labelledby="final-title" hidden>
+          <div class="sheet__bar">
+            <button class="icon-btn" id="back-home-final" type="button" aria-label="Torna al calendario">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <h2 class="sheet__label" id="final-title">L'album</h2>
+            <span class="chip chip--muted" id="final-chip"></span>
+          </div>
+
+          <article class="card album">
+            <p class="album__hand">24 giorni insieme</p>
+            <h3 class="album__title">Il nostro calendario</h3>
+            <p class="album__date" id="final-date"></p>
+            <p class="album__score">
+              <span id="final-score">0</span><span class="album__max" id="final-max">/ 250</span>
+            </p>
+            <p class="album__message" id="final-message"></p>
+
+            <ol class="album__list" id="final-list"></ol>
+
+            <p class="album__foot">Fatto a mano, un giorno alla volta.</p>
+          </article>
+
+          <button class="btn btn--primary album__save" id="save-album" type="button">
+            Salva come immagine
+          </button>
+          <p class="album__hint" id="save-hint">
+            Su iPhone si apre il menu Condividi: scegli “Salva immagine”. In alternativa tieni premuto
+            sull'anteprima.
+          </p>
+        </section>
       </main>
     </div>
 
@@ -200,6 +241,64 @@
         <p class="gate__error" id="gate-error" role="alert" hidden></p>
         <button class="btn btn--primary" id="gate-submit" type="submit">Sblocca</button>
       </form>
+    </div>
+
+    <!-- Spiegazione del gioco: compare dopo passphrase e guida all'installazione, una volta sola. -->
+    <div class="intro" id="intro" hidden>
+      <div class="intro__backdrop" data-intro-close aria-hidden="true"></div>
+      <section
+        class="intro__card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="intro-title"
+        aria-describedby="intro-lead"
+      >
+        <button class="intro__close" id="intro-close" type="button" aria-label="Chiudi la spiegazione">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+          </svg>
+        </button>
+
+        <p class="intro__hand">come funziona</p>
+        <h2 class="intro__title" id="intro-title">Un giorno alla volta</h2>
+        <p class="intro__lead" id="intro-lead">
+          Ogni giorno, dal 1 al 24 dicembre, si apre una casella.
+        </p>
+        <ul class="intro__list">
+          <li>Hai <strong>due tentativi</strong> per ogni risposta.</li>
+          <li>Se chiedi l'indizio, il massimo scende a <strong>metà</strong>.</li>
+          <li>Il <strong>20 dicembre</strong> la casella vale il doppio.</li>
+          <li>I giorni saltati restano lì, con punteggio pieno.</li>
+          <li>Dal <strong>24 dicembre</strong> trovi l'album con tutte le risposte.</li>
+        </ul>
+        <button class="btn btn--primary" id="intro-done" type="button">Si comincia</button>
+      </section>
+    </div>
+
+    <!-- Anteprima dell'immagine quando la condivisione non è disponibile (iOS: tieni premuto). -->
+    <div class="gate album-preview" id="album-preview" hidden>
+      <div class="gate__backdrop" data-album-close aria-hidden="true"></div>
+      <section
+        class="gate__card album-preview__card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="album-preview-title"
+      >
+        <button class="install__close" id="album-preview-close" type="button" aria-label="Chiudi l'anteprima">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+          </svg>
+        </button>
+        <h2 class="gate__title" id="album-preview-title">La tua immagine</h2>
+        <p class="gate__intro">Tieni premuto sull'immagine e scegli “Salva immagine”.</p>
+        <img class="album-preview__img" id="album-preview-img" alt="Riepilogo illustrato del calendario" />
+        <div class="album-preview__actions">
+          <button class="btn btn--primary" id="album-share" type="button" hidden>Condividi</button>
+          <a class="btn album-preview__download" id="album-download" download="calendario-avvento.png" href="#">
+            Scarica
+          </a>
+        </div>
+      </section>
     </div>
 
     <!-- Installazione: mostrata da pwa.js solo nel browser, mai nell'app installata. -->

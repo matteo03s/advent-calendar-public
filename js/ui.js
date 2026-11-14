@@ -12,6 +12,7 @@ import {
   getMaxScore,
   getProgress,
   getUnlockedThrough,
+  isFinalUnlocked,
   parseDebugDate,
   questionPoints,
   requestHint,
@@ -21,6 +22,8 @@ import {
 import { getEntry, loadState, resetState, saveState } from "./state.js";
 import { QuestionsLockedError, loadQuestions, unlockQuestions } from "./questions.js";
 import { registerServiceWorker, setupInstallHint } from "./pwa.js";
+import { setupIntro } from "./intro.js";
+import { createAlbumImage } from "./album-image.js";
 
 // getMonth() è 0-based, come in game.js.
 const DECEMBER = 11;
@@ -30,6 +33,14 @@ const BANDS = [
   { min: 0, max: 149, label: "Sei na pippa" },
   { min: 150, max: 209, label: "Ci siamo quasi" },
   { min: 210, max: 250, label: "Brava scema" },
+];
+
+// Messaggi finali segnaposto: sostituisci i testi, le soglie sono in proporzione al massimo.
+const FINAL_MESSAGES = [
+  { minRatio: 0.85, text: "[Segnaposto] Il messaggio per un punteggio altissimo: scrivilo qui." },
+  { minRatio: 0.65, text: "[Segnaposto] Il messaggio per un bel punteggio: scrivilo qui." },
+  { minRatio: 0.35, text: "[Segnaposto] Il messaggio per un punteggio così così: scrivilo qui." },
+  { minRatio: 0, text: "[Segnaposto] Il messaggio per un punteggio basso: scrivilo qui." },
 ];
 
 const STAR_ICON =
@@ -71,6 +82,7 @@ const dom = {
     home: $("view-home"),
     question: $("view-question"),
     report: $("view-report"),
+    final: $("view-final"),
   },
   backHome: $("back-home"),
   backHomeReport: $("back-home-report"),
@@ -103,6 +115,21 @@ const dom = {
   gateInput: $("gate-input"),
   gateError: $("gate-error"),
   gateSubmit: $("gate-submit"),
+  openFinal: $("open-final"),
+  backHomeFinal: $("back-home-final"),
+  finalChip: $("final-chip"),
+  finalDate: $("final-date"),
+  finalScore: $("final-score"),
+  finalMax: $("final-max"),
+  finalMessage: $("final-message"),
+  finalList: $("final-list"),
+  saveAlbum: $("save-album"),
+  saveHint: $("save-hint"),
+  albumPreview: $("album-preview"),
+  albumPreviewImg: $("album-preview-img"),
+  albumPreviewClose: $("album-preview-close"),
+  albumShare: $("album-share"),
+  albumDownload: $("album-download"),
 };
 
 // Stato di UI in memoria: solo lo stato di gioco viene persistito.
@@ -111,6 +138,7 @@ let questions = null;
 let currentDay = null;
 let confettiFrame = 0;
 let installHintShown = false;
+let albumFile = null;
 
 const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const currentNow = () => resolveNow(window.location.search);
@@ -231,6 +259,8 @@ function renderHome(now = currentNow()) {
     now.getMonth() === DECEMBER && dayOfMonth <= LAST_DAY ? dayOfMonth : null;
   const calendar = getCalendar(state, now);
   dom.grid.replaceChildren(...calendar.map((day) => doorElement(day, todayDay)));
+
+  dom.openFinal.hidden = !isFinalUnlocked(now);
 
   const progress = getProgress(state, now, questions);
   if (progress.locked === LAST_DAY) {
@@ -473,6 +503,184 @@ function renderReport(now = currentNow()) {
   dom.reportList.replaceChildren(...rows);
 }
 
+function finalMessageFor(score, maxScore) {
+  const ratio = maxScore > 0 ? score / maxScore : 0;
+  const band = FINAL_MESSAGES.find((item) => ratio >= item.minRatio) ?? FINAL_MESSAGES[FINAL_MESSAGES.length - 1];
+  return band.text;
+}
+
+function buildAlbumRows(now) {
+  return getCalendar(state, now).map((day) => {
+    const question = questions?.get(day.day) ?? null;
+    const entry = day.entry;
+    const guesses = entry?.guesses ?? [];
+    const answer = guesses.length ? guesses[guesses.length - 1] : "";
+
+    let status = "non giocata";
+    let tone = "none";
+    let pointsLabel = "—";
+
+    if (day.status === DAY_STATUS.solved) {
+      status = day.usedHint ? "con indizio" : "corretto";
+      tone = day.usedHint ? "hint" : "ok";
+      pointsLabel = `+${day.points}`;
+    } else if (day.status === DAY_STATUS.failed) {
+      status = "sbagliato";
+      tone = "ko";
+      pointsLabel = "0";
+    } else if (entry) {
+      status = "in sospeso";
+    }
+
+    return {
+      day: day.day,
+      question: question?.question ?? "Domanda non disponibile",
+      answer,
+      correct: question?.answers?.[0] ?? "",
+      status,
+      tone,
+      pointsLabel,
+    };
+  });
+}
+
+function albumRowElement(row) {
+  const item = document.createElement("li");
+  item.className = "album__row";
+
+  const day = document.createElement("span");
+  day.className = "album__day";
+  day.textContent = String(row.day);
+
+  const body = document.createElement("span");
+  const question = document.createElement("span");
+  question.className = "album__q";
+  question.textContent = row.question;
+  const answer = document.createElement("span");
+  answer.className = "album__answer";
+  answer.textContent = row.answer ? `tu: ${row.answer}` : "tu: —";
+  body.append(question, answer);
+
+  if (row.tone === "ko" && row.correct) {
+    const correct = document.createElement("span");
+    correct.className = "album__correct";
+    correct.textContent = `era: ${row.correct}`;
+    body.append(correct);
+  }
+
+  const status = document.createElement("span");
+  status.className = "album__status";
+  status.textContent = row.status;
+  const points = document.createElement("span");
+  points.className = "album__points";
+  points.textContent = row.pointsLabel;
+  status.append(points);
+
+  item.append(day, body, status);
+  return item;
+}
+
+// Album: riepilogo completo, disponibile dal 24 dicembre.
+function renderFinal(now = currentNow()) {
+  if (!isFinalUnlocked(now)) {
+    showView("home");
+    return;
+  }
+
+  const progress = getProgress(state, now, questions);
+  const rows = buildAlbumRows(now);
+
+  dom.finalChip.textContent = `${progress.maxScore} punti`;
+  dom.finalDate.textContent = `${capitalize(dateFormatter.format(now))} · 24 giorni`;
+  dom.finalScore.textContent = String(progress.score);
+  dom.finalMax.textContent = `/ ${progress.maxScore}`;
+  dom.finalMessage.textContent = finalMessageFor(progress.score, progress.maxScore);
+  dom.finalList.replaceChildren(...rows.map(albumRowElement));
+}
+
+function openFinalView() {
+  const now = currentNow();
+  if (!isFinalUnlocked(now)) return;
+  renderFinal(now);
+  showView("final");
+}
+
+function canShareFile(file) {
+  if (!file || typeof navigator.canShare !== "function") return false;
+  try {
+    return navigator.canShare({ files: [file] });
+  } catch {
+    return false;
+  }
+}
+
+async function shareAlbum(file) {
+  try {
+    await navigator.share({ files: [file], title: "Il nostro calendario" });
+    return true;
+  } catch (error) {
+    return error?.name === "AbortError";
+  }
+}
+
+function openAlbumPreview(dataUrl) {
+  dom.albumPreviewImg.src = dataUrl;
+  dom.albumDownload.href = dataUrl;
+  dom.albumShare.hidden = !canShareFile(albumFile);
+  dom.albumPreview.hidden = false;
+  document.body.classList.add("gate-open");
+  if (dom.app) {
+    if ("inert" in dom.app) dom.app.inert = true;
+    dom.app.setAttribute("aria-hidden", "true");
+  }
+  dom.albumPreviewClose.focus();
+}
+
+function closeAlbumPreview() {
+  dom.albumPreview.hidden = true;
+  document.body.classList.remove("gate-open");
+  if (dom.app) {
+    if ("inert" in dom.app) dom.app.inert = false;
+    dom.app.removeAttribute("aria-hidden");
+  }
+}
+
+async function handleSaveAlbum() {
+  const now = currentNow();
+  if (!isFinalUnlocked(now)) return;
+
+  const progress = getProgress(state, now, questions);
+  const label = dom.saveAlbum.textContent;
+  dom.saveAlbum.disabled = true;
+  dom.saveAlbum.textContent = "Preparo l'immagine…";
+  albumFile = null;
+
+  try {
+    const canvas = await createAlbumImage({
+      score: progress.score,
+      maxScore: progress.maxScore,
+      message: finalMessageFor(progress.score, progress.maxScore),
+      dateLabel: capitalize(dateFormatter.format(now)),
+      rows: buildAlbumRows(now),
+    });
+
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("immagine non disponibile");
+
+    if (typeof File === "function") {
+      albumFile = new File([blob], "calendario-avvento.png", { type: "image/png" });
+      if (canShareFile(albumFile) && (await shareAlbum(albumFile))) return;
+    }
+
+    openAlbumPreview(canvas.toDataURL("image/png"));
+  } catch (error) {
+    dom.saveHint.textContent = `Non riesco a preparare l'immagine: ${error.message}`;
+  } finally {
+    dom.saveAlbum.disabled = false;
+    dom.saveAlbum.textContent = label;
+  }
+}
+
 // Coriandoli su canvas; nessun rAF se l'utente preferisce meno movimento.
 function fireConfetti() {
   if (prefersReducedMotion()) return;
@@ -588,9 +796,12 @@ function questionsReady() {
   renderHome();
   if (document.body.dataset.view === "report") renderReport();
   if (document.body.dataset.view === "question") renderQuestion();
+  if (document.body.dataset.view === "final") renderFinal();
   if (!installHintShown) {
     installHintShown = true;
-    setupInstallHint();
+    setupInstallHint({ onDone: () => setupIntro() });
+  } else {
+    setupIntro();
   }
 }
 
@@ -634,6 +845,27 @@ function bindEvents() {
     showView("home");
   });
 
+  dom.backHomeFinal.addEventListener("click", () => {
+    dom.input.blur();
+    renderHeader();
+    renderHome();
+    showView("home");
+  });
+
+  dom.openFinal.addEventListener("click", openFinalView);
+  dom.saveAlbum.addEventListener("click", handleSaveAlbum);
+
+  dom.albumPreviewClose.addEventListener("click", closeAlbumPreview);
+  const albumBackdrop = dom.albumPreview.querySelector("[data-album-close]");
+  if (albumBackdrop) albumBackdrop.addEventListener("click", closeAlbumPreview);
+  dom.albumShare.addEventListener("click", async () => {
+    if (albumFile) await shareAlbum(albumFile);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !dom.albumPreview.hidden) closeAlbumPreview();
+  });
+
   dom.form.addEventListener("submit", handleSubmit);
   dom.hintBtn.addEventListener("click", handleHint);
   dom.gateForm.addEventListener("submit", handleUnlock);
@@ -658,6 +890,7 @@ function bindEvents() {
     renderHeader(now);
     renderHome(now);
     if (document.body.dataset.view === "report") renderReport(now);
+    if (document.body.dataset.view === "final") renderFinal(now);
   });
 }
 
@@ -685,6 +918,7 @@ function scheduleMidnightRefresh() {
     renderHeader(fresh);
     renderHome(fresh);
     if (document.body.dataset.view === "report") renderReport(fresh);
+    if (document.body.dataset.view === "final") renderFinal(fresh);
     if (document.body.dataset.view === "question" && currentDay !== null) renderQuestion();
     scheduleMidnightRefresh();
   }, delay);

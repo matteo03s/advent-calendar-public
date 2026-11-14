@@ -118,10 +118,21 @@ export async function registerServiceWorker() {
 }
 
 // Overlay mostrato solo nel browser: dialog modale con focus trap e sfondo inerte.
-export function setupInstallHint() {
+// `onDone` viene chiamato quando la guida è stata mostrata e chiusa, oppure subito se non va mostrata.
+export function setupInstallHint({ onDone } = {}) {
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    if (typeof onDone === "function") onDone();
+  };
+
   const overlay = document.getElementById("install");
   const help = document.getElementById("install-help");
-  if (!overlay) return;
+  if (!overlay) {
+    finish();
+    return;
+  }
 
   const app = document.querySelector(".app");
   const closeButton = document.getElementById("install-close");
@@ -137,6 +148,7 @@ export function setupInstallHint() {
   if (isStandalone()) {
     overlay.hidden = true;
     if (help) help.hidden = true;
+    finish();
     return;
   }
 
@@ -193,6 +205,7 @@ export function setupInstallHint() {
     rememberDismissal();
 
     if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
+    finish();
   }
 
   closeButton.addEventListener("click", close);
@@ -202,5 +215,7 @@ export function setupInstallHint() {
 
   if (!wasDismissed()) {
     window.setTimeout(open, 350);
+  } else {
+    finish();
   }
 }

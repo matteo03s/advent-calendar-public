@@ -11,6 +11,7 @@ import {
   getTotalScore,
   getUnlockedThrough,
   isDayUnlocked,
+  isFinalUnlocked,
   parseDebugDate,
   questionPoints,
   requestHint,
@@ -54,6 +55,13 @@ test("sblocco: prima di dicembre nessun giorno, dal 1 al 24 il giorno corrente, 
   assert.equal(getUnlockedThrough(december(24)), 24);
   assert.equal(getUnlockedThrough(december(25)), 24);
   assert.equal(getUnlockedThrough(december(31, 23, 59)), 24);
+});
+
+test("l'album finale si sblocca il 24 dicembre", () => {
+  assert.equal(isFinalUnlocked(november(30)), false);
+  assert.equal(isFinalUnlocked(december(23)), false);
+  assert.equal(isFinalUnlocked(december(24)), true);
+  assert.equal(isFinalUnlocked(december(25)), true);
 });
 
 test("sblocco: cambio giorno a mezzanotte con ora locale del dispositivo", () => {

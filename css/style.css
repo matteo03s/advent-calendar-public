@@ -1024,6 +1024,199 @@ input {
   color: var(--text-soft);
 }
 
+/* Album finale: accesso dalla home, riepilogo e immagine condivisibile. */
+.album-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  margin-top: 20px;
+  padding: 15px 14px;
+  border-radius: 3px 12px 5px 11px;
+  border: 1px solid rgba(168, 69, 47, 0.45);
+  background: linear-gradient(168deg, #f8efd9, #ecd9b6);
+  color: var(--ink);
+  cursor: pointer;
+  transform: rotate(-0.4deg);
+  box-shadow: 0 10px 16px -10px rgba(0, 0, 0, 0.7);
+}
+
+.album-cta__hand {
+  font-family: var(--font-hand);
+  font-size: 1.02rem;
+  line-height: 1.1;
+  color: #93392a;
+}
+
+.album-cta__title {
+  font-family: var(--font-display);
+  font-size: 1.42rem;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.album-cta__note {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+.album__hand {
+  font-family: var(--font-hand);
+  font-size: 1.05rem;
+  line-height: 1.2;
+  color: #93392a;
+  transform: rotate(-1deg);
+  transform-origin: left center;
+}
+
+.album__title {
+  margin: 2px 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.7rem;
+  line-height: 1.1;
+}
+
+.album__date {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.album__score {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 14px 0 12px;
+  font-family: var(--font-display);
+  font-size: 3rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.album__max {
+  font-size: 1rem;
+  color: var(--ink-soft);
+}
+
+.album__message {
+  padding: 12px 14px;
+  border: 1px dashed rgba(168, 69, 47, 0.45);
+  background: rgba(168, 69, 47, 0.06);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #6d2417;
+}
+
+.album__list {
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.album__row {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  align-items: start;
+  gap: 10px;
+  padding: 11px 2px;
+  border-bottom: 1px dotted rgba(43, 35, 32, 0.25);
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+.album__day {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--terracotta);
+  font-variant-numeric: tabular-nums;
+}
+
+.album__q {
+  display: block;
+  color: var(--ink);
+}
+
+.album__answer {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.album__correct {
+  display: block;
+  margin-top: 1px;
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+}
+
+.album__status {
+  text-align: right;
+  white-space: nowrap;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+
+.album__points {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.album__foot {
+  margin-top: 16px;
+  text-align: center;
+  font-family: var(--font-hand);
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+
+.album__save {
+  margin-top: 16px;
+}
+
+.album__hint {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: rgba(243, 231, 213, 0.62);
+}
+
+.album-preview__card {
+  width: min(100%, 430px);
+  max-height: 88dvh;
+  overflow-y: auto;
+}
+
+.album-preview__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 12px;
+  border-radius: 3px;
+  border: 1px solid rgba(43, 35, 32, 0.2);
+}
+
+.album-preview__actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.album-preview__download {
+  background: transparent;
+  border: 1.5px dashed rgba(43, 35, 32, 0.45);
+  color: var(--ink);
+  text-decoration: none;
+}
+
 #confetti {
   position: fixed;
   inset: 0;
@@ -1099,8 +1292,121 @@ body.gate-open {
   color: #78281f;
 }
 
+/* Spiegazione del gioco: terzo manifesto, dopo passphrase e installazione. */
+body.intro-open {
+  overflow: hidden;
+}
+
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 76;
+  display: grid;
+  place-items: center;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+}
+
+.intro__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 7, 8, 0.84);
+}
+
+.intro__card {
+  position: relative;
+  width: min(100%, 420px);
+  max-height: 88dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px 20px 20px;
+  border-radius: 3px 12px 5px 11px;
+  border: 1px solid rgba(43, 35, 32, 0.2);
+  background: linear-gradient(180deg, #fbf4e4 0%, var(--cream) 46%, #eadfc8 100%);
+  color: var(--ink);
+  box-shadow: 0 26px 54px -22px rgba(0, 0, 0, 0.9);
+}
+
+.intro__close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.intro__close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.intro__hand {
+  font-family: var(--font-hand);
+  font-size: 1.05rem;
+  line-height: 1.2;
+  color: #93392a;
+  transform: rotate(-1.2deg);
+  transform-origin: left center;
+}
+
+.intro__title {
+  margin: 4px 0 6px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.7rem;
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+}
+
+.intro__lead {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.intro__list {
+  display: grid;
+  gap: 9px;
+  margin: 16px 0 18px;
+  padding: 0;
+  list-style: none;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.intro__list li {
+  position: relative;
+  padding-left: 16px;
+  line-height: 1.45;
+}
+
+.intro__list li::before {
+  content: "·";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--terracotta);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.intro__list strong {
+  font-weight: 700;
+}
+
 /* Schermata di installazione: visibile solo nel browser, non nell'app installata. */
 .home__install {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 10px;
   margin-top: 2px;
   text-align: center;
 }

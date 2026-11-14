@@ -42,6 +42,11 @@ export function isDayUnlocked(day, date = new Date()) {
   return isValidDay(day) && day <= getUnlockedThrough(date);
 }
 
+// L'album finale si apre quando tutte le caselle sono sbloccate (dal 24 dicembre in poi).
+export function isFinalUnlocked(date = new Date()) {
+  return getUnlockedThrough(date) >= LAST_DAY;
+}
+
 // Costruisce la data con componenti locali: "YYYY-MM-DD" da solo verrebbe letto come UTC.
 export function parseDebugDate(search) {
   if (!search) return null;
