@@ -363,6 +363,19 @@ Overlay `#install` in `index.html`, mostrato da `js/pwa.js`:
 - `color-scheme: dark` e `theme-color: #241b1c` coerenti con lo status bar `black-translucent`.
 - Input a 17px (nessuno zoom automatico), `enterkeyhint="send"`, scroll mirato con `visualViewport`.
 
+### Deploy su GitHub Pages
+
+- Repository pubblico: `https://github.com/matteo03s/advent-calendar-public`
+- URL del sito: `https://matteo03s.github.io/advent-calendar-public/`
+- Sorgente: snapshot orfano con storia pulita (nessun commit contiene `questions.json` in chiaro); branch `main` del repo pubblico.
+- Pages: Settings → Pages → **Deploy from a branch** → `main` / `(root)`.
+- Copia di lavoro per il sito: branch locale `public`, che traccia `public/main`; `origin/main` (repo privato) resta archivio della storia completa. Non pushare `--all`/`--mirror` sul remoto pubblico, altrimenti si porta online anche la storia privata.
+- **Aggiornare le domande**: con il branch `public` attivo, modificare `questions.json` locale (ignorato da git), eseguire `node scripts/encrypt-questions.mjs`, committare `questions.enc.json` e pushare. Il file cifrato è network-first: la nuova versione arriva al primo avvio online.
+- **Aggiornare codice/CSS/icone**: alzare `CACHE_NAME` in `service-worker.js`, commit e push. Poi doppio reload; su iPhone chiudere le schede o rimuovere/riaggiungere l'icona se resta la versione vecchia.
+- **Verifica desktop**: DevTools → Application → Manifest (nome, icone, `standalone`, `start_url`), Service Workers (attivo, prova Offline), Cache Storage (`advent-calendar-v10` con `questions.enc.json`, CSS, JS, icone).
+- **Verifica iPhone**: aprire in Safari, inserire la passphrase, controllare lo sblocco; “Aggiungi alla schermata Home”; attivare la modalità aereo e riaprire l'icona. L'app installata può chiedere la passphrase una volta anche se già inserita in Safari (storage separato).
+- **Privacy**: il repo è pubblico, quindi `questions.enc.json` è scaricabile, ma è cifrato AES-GCM con una passphrase che non sta nel repo. Base64 o hash non sarebbero una protezione reale. Per un accesso a prova di estraneo servirebbe un hosting con access control (es. Cloudflare Access), non necessario per un regalo di coppia.
+
 ## 10. Review: date, fuso orario, accessibilità
 
 Correzioni applicate in questo passaggio:
@@ -411,5 +424,6 @@ Nessun'altra incoerenza di data trovata: `updatedAt` è ISO UTC ma è solo infor
 - [x] Guida per piattaforma: iOS, Android e desktop, con icona maskable per Android
 - [x] `tests/pwa.test.js` — rilevamento piattaforma e testi delle guide
 - [x] Review date/fuso orario (timer di mezzanotte) e accessibilità (dialog modale, focus, contatore)
+- [x] Deploy su GitHub Pages — `https://matteo03s.github.io/advent-calendar-public/`
+- [x] Repo pubblico da snapshot orfano, senza `questions.json` nella storia
 - [ ] Test su iPhone reale (Safari + aggiunta a Home)
-- [ ] Deploy su GitHub Pages
