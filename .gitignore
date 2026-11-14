@@ -1,0 +1,8 @@
+node_modules/
+.commandcode/
+.preview/
+.DS_Store
+Thumbs.db
+
+# Domande in chiaro: restano solo in locale, nel repo va questions.enc.json
+questions.json
