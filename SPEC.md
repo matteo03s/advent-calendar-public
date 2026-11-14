@@ -306,10 +306,10 @@ L'intro spiega: una casella al giorno, due tentativi, indizio che dimezza, bonus
 ### Salvataggio come immagine
 
 - Implementato con **canvas nativo** (`js/album-image.js`), non html2canvas: zero dipendenze (html2canvas pesa ~200 KB), funziona offline e nella PWA, stesso output su iOS/Android/desktop, nessun problema di CORS o di layout DOM. Contro: il layout va disegnato a mano (due colonne 1–12 / 13–24, testi con wrapping misurato).
-- Immagine 1080 px di larghezza, altezza calcolata (~2200 px con 24 domande), sfondo carta, testata scura, punteggio e messaggio finale.
+- Immagine 1080 px di larghezza, altezza calcolata (~2400 px con 24 domande), sfondo carta, testata scura, punteggio, messaggio finale e un **alberello decorativo** in fondo: le tre fasce si colorano in base al risultato (salvia / ocra / verde scuro), stella solo nella fascia alta, senza legenda.
 - Salvataggio: `canvas.toBlob` → `File` → `navigator.share({ files })` se `navigator.canShare` lo supporta (iOS 15+ apre il menu Condividi, da cui “Salva immagine”). Se la condivisione non è disponibile o fallisce, si apre `#album-preview` con l'immagine: su iOS si tiene premuto e si sceglie “Salva immagine”; c'è anche un link “Scarica” per desktop. L'anteprima ha un pulsante “Condividi” quando i file sono supportati.
 - Nota iOS: `navigator.share` va invocato da un gesto utente; la preparazione del canvas è asincrona, quindi se la condivisione viene rifiutata si usa sempre il fallback dell'anteprima.
-- Verifica fatta in browser: immagine 1080×2216, data URL ~620 KB, anteprima e link di download funzionanti. La prova su PWA iOS reale resta da fare (menu Condividi/long-press).
+- Verifica fatta in browser: immagine 1080×2432, data URL ~600 KB, anteprima e link di download funzionanti; albero visibile in fondo, colorato per fascia (220 punti → tutte le fasce + stella). La prova su PWA iOS reale resta da fare (menu Condividi/long-press).
 
 ### Movimento e accessibilità
 
@@ -367,7 +367,7 @@ Quattro PNG generate con GDI+ (sfondo prugna, albero crema, stella ocra, tronco 
 
 `service-worker.js`, registrato da `js/pwa.js` con `navigator.serviceWorker.register("./service-worker.js", { scope: "./" })`.
 
-- `CACHE_NAME = "advent-calendar-v14"` (versionata a mano a ogni deploy).
+- `CACHE_NAME = "advent-calendar-v15"` (versionata a mano a ogni deploy).
 - `install`: precache di shell, CSS, font, tutti i moduli JS (`ui`, `intro`, `album-image`, `final-texts`, …), `questions.enc.json`, manifest e icone; poi `skipWaiting()`.
 - `activate`: elimina tutte le cache `advent-calendar-*` diverse da quella corrente, poi `clients.claim()`.
 - `fetch`, solo same-origin e solo `GET`:
@@ -402,7 +402,7 @@ Overlay `#install` in `index.html`, mostrato da `js/pwa.js`:
 - Copia di lavoro per il sito: branch locale `public`, che traccia `public/main`; `origin/main` (repo privato) resta archivio della storia completa. Non pushare `--all`/`--mirror` sul remoto pubblico, altrimenti si porta online anche la storia privata.
 - **Aggiornare le domande**: con il branch `public` attivo, modificare `questions.json` locale (ignorato da git), eseguire `node scripts/encrypt-questions.mjs`, committare `questions.enc.json` e pushare. Il file cifrato è network-first: la nuova versione arriva al primo avvio online.
 - **Aggiornare codice/CSS/icone**: alzare `CACHE_NAME` in `service-worker.js`, commit e push. Poi doppio reload; su iPhone chiudere le schede o rimuovere/riaggiungere l'icona se resta la versione vecchia.
-- **Verifica desktop**: DevTools → Application → Manifest (nome, icone, `standalone`, `start_url`), Service Workers (attivo, prova Offline), Cache Storage (`advent-calendar-v14` con `questions.enc.json`, CSS, JS, icone).
+- **Verifica desktop**: DevTools → Application → Manifest (nome, icone, `standalone`, `start_url`), Service Workers (attivo, prova Offline), Cache Storage (`advent-calendar-v15` con `questions.enc.json`, CSS, JS, icone).
 - **Verifica iPhone**: aprire in Safari, inserire la passphrase, controllare lo sblocco; “Aggiungi alla schermata Home”; attivare la modalità aereo e riaprire l'icona. L'app installata può chiedere la passphrase una volta anche se già inserita in Safari (storage separato).
 - **Privacy**: il repo è pubblico, quindi `questions.enc.json` è scaricabile, ma è cifrato AES-GCM con una passphrase che non sta nel repo. Base64 o hash non sarebbero una protezione reale. Per un accesso a prova di estraneo servirebbe un hosting con access control (es. Cloudflare Access), non necessario per un regalo di coppia.
 
