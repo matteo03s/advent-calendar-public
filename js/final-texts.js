@@ -4,7 +4,7 @@ export const ALBUM_TEXT = {
   hand: "24 giorni insieme",
   title: "Il nostro calendario",
   dateSuffix: "24 giorni",
-  foot: "Fatto a mano, un giorno alla volta.",
+  foot: "Fatto per te, un giorno alla volta.",
 
   save: "Salva come immagine",
   saving: "Preparo l'immagine…",
@@ -36,7 +36,7 @@ export const ALBUM_TEXT = {
     hand: "24 giorni insieme",
     title: "Calendario dell'Avvento",
     scoreLabel: "punteggio",
-    foot: "Fatto a mano, un giorno alla volta.",
+    foot: "Fatto per te, un giorno alla volta.",
   },
 };
 
@@ -45,18 +45,18 @@ export const ALBUM_TEXT = {
 export const FINAL_MESSAGES = [
   {
     minRatio: 0.85,
-    text: "[Segnaposto] Il messaggio per un punteggio altissimo: scrivilo qui.",
+    text: "Bravissima, vedo che hai studiato!",
   },
   {
     minRatio: 0.65,
-    text: "[Segnaposto] Il messaggio per un bel punteggio: scrivilo qui.",
+    text: "Sei stata brava, ma potevi fare di più",
   },
   {
     minRatio: 0.35,
-    text: "[Segnaposto] Il messaggio per un punteggio così così: scrivilo qui.",
+    text: "Mazza, non c'hai manco provato",
   },
   {
     minRatio: 0,
-    text: "[Segnaposto] Il messaggio per un punteggio basso: scrivilo qui.",
+    text: "Forse dovremo rivalutare sta relazione eh",
   },
 ];
