@@ -16,6 +16,8 @@ const COLORS = {
   gold: "#d9a441",
   sage: "#3e5d4b",
   berry: "#8c2f27",
+  tree: ["#aec7a1", "#e0b268", "#3e5d4b"],
+  treeOff: "#e8dcc2",
 };
 
 const WIDTH = 1080;
@@ -68,6 +70,51 @@ function toneColor(tone) {
   if (tone === "hint") return COLORS.gold;
   if (tone === "ko") return COLORS.berry;
   return COLORS.soft;
+}
+
+// Alberello decorativo: le tre fasce si colorano in base al risultato, senza legenda.
+function drawTree(ctx, cx, top, bandIndex) {
+  ctx.save();
+  ctx.fillStyle = "#9c7a52";
+  ctx.fillRect(cx - 9, top + 158, 18, 30);
+
+  const tiers = [
+    { points: [[cx, top + 78], [cx - 84, top + 164], [cx + 86, top + 162]] },
+    { points: [[cx, top + 42], [cx - 68, top + 122], [cx + 70, top + 120]] },
+    { points: [[cx, top + 4], [cx - 52, top + 84], [cx + 54, top + 82]] },
+  ];
+
+  tiers.forEach((tier, index) => {
+    ctx.beginPath();
+    ctx.moveTo(tier.points[0][0], tier.points[0][1]);
+    for (const point of tier.points.slice(1)) ctx.lineTo(point[0], point[1]);
+    ctx.closePath();
+    ctx.fillStyle = index <= bandIndex ? COLORS.tree[index] : COLORS.treeOff;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(43, 35, 32, 0.35)";
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  if (bandIndex >= 2) {
+    const starY = top - 4;
+    ctx.beginPath();
+    for (let index = 0; index < 10; index += 1) {
+      const radius = index % 2 === 0 ? 14 : 6;
+      const angle = (-90 + index * 36) * Math.PI / 180;
+      const x = cx + radius * Math.cos(angle);
+      const y = starY + radius * Math.sin(angle);
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = COLORS.gold;
+    ctx.fill();
+  }
+
+  ctx.restore();
 }
 
 function layoutColumn(ctx, rows) {
@@ -156,9 +203,7 @@ function drawColumn(ctx, x, top, layout, rows) {
   }
 }
 
-const SANS_STACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
-
-export async function createAlbumImage({ score, maxScore, message, dateLabel, rows }) {
+export async function createAlbumImage({ score, maxScore, message, dateLabel, rows, bandIndex = 0 }) {
   if (document.fonts?.ready) await document.fonts.ready;
 
   const measureCanvas = document.createElement("canvas");
@@ -176,7 +221,9 @@ export async function createAlbumImage({ score, maxScore, message, dateLabel, ro
   const columnsTop = HEADER_H + 62;
   const columnsHeight = Math.max(left.height, right.height);
   const messageTop = columnsTop + columnsHeight + 34;
-  const footerTop = messageTop + messageHeight + 30;
+  const treeTop = messageTop + messageHeight + 30;
+  const treeHeight = 220;
+  const footerTop = treeTop + treeHeight + 24;
   const height = footerTop + 84;
 
   const canvas = document.createElement("canvas");
@@ -229,6 +276,8 @@ export async function createAlbumImage({ score, maxScore, message, dateLabel, ro
   messageLines.forEach((line, index) => {
     ctx.fillText(line, WIDTH / 2, messageTop + index * 44);
   });
+
+  drawTree(ctx, WIDTH / 2, treeTop, bandIndex);
 
   ctx.fillStyle = COLORS.soft;
   ctx.font = `26px ${HAND}`;

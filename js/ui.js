@@ -676,6 +676,7 @@ async function handleSaveAlbum() {
       message: finalMessageFor(progress.score, progress.maxScore),
       dateLabel: capitalize(dateFormatter.format(now)),
       rows: buildAlbumRows(now),
+      bandIndex: bandIndexFor(progress.score),
     });
 
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
