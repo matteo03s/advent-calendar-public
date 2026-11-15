@@ -93,7 +93,7 @@ Se il link arriva da WhatsApp o Instagram, la schermata avvisa di riaprirlo in S
 
 Le domande cifrate e `js/final-texts.js` sono network-first: per cambiare domande o scritte dell'album basta rigenerare/pushare, arrivano al primo avvio online. Per il resto del codice, CSS e icone invece bypassa la cache:
 
-1. alza `CACHE_NAME` in `service-worker.js` (es. `advent-calendar-v15` → `v16`);
+1. alza `CACHE_NAME` in `service-worker.js` (es. `advent-calendar-v16` → `v17`);
 2. ricarica due volte (la prima installa il nuovo SW, la seconda serve la cache nuova);
 3. se resta la versione vecchia, forza il controllo con `navigator.serviceWorker.getRegistration().then((r) => r.update())`, cancella i dati del sito da Safari (Impostazioni → Safari → Cancella dati e siti web) oppure rimuovi e riaggiungi l'icona dalla Home.
 

@@ -367,11 +367,11 @@ Quattro PNG generate con GDI+ (sfondo prugna, albero crema, stella ocra, tronco 
 
 `service-worker.js`, registrato da `js/pwa.js` con `navigator.serviceWorker.register("./service-worker.js", { scope: "./" })`.
 
-- `CACHE_NAME = "advent-calendar-v15"` (versionata a mano a ogni deploy).
+- `CACHE_NAME = "advent-calendar-v16"` (versionata a mano a ogni deploy).
 - `install`: precache di shell, CSS, font, tutti i moduli JS (`ui`, `intro`, `album-image`, `final-texts`, …), `questions.enc.json`, manifest e icone; poi `skipWaiting()`.
 - `activate`: elimina tutte le cache `advent-calendar-*` diverse da quella corrente, poi `clients.claim()`.
 - `fetch`, solo same-origin e solo `GET`:
-  - navigazioni, `questions.enc.json` e `final-texts.js` → **network-first** con fallback alla cache (e `index.html` per le navigazioni offline);
+  - navigazioni, `questions.enc.json` e `final-texts.js` → **network-first** con fallback alla cache (e `index.html` per le navigazioni offline). Il fetch usa `cache: "no-store"`, così non riusa la cache HTTP di GitHub Pages;
   - tutto il resto → **cache-first** con aggiornamento della cache alla prima risposta di rete.
 - `message { type: "SKIP_WAITING" }` per attivare subito una nuova versione.
 
@@ -402,7 +402,7 @@ Overlay `#install` in `index.html`, mostrato da `js/pwa.js`:
 - Copia di lavoro per il sito: branch locale `public`, che traccia `public/main`; `origin/main` (repo privato) resta archivio della storia completa. Non pushare `--all`/`--mirror` sul remoto pubblico, altrimenti si porta online anche la storia privata.
 - **Aggiornare le domande**: con il branch `public` attivo, modificare `questions.json` locale (ignorato da git), eseguire `node scripts/encrypt-questions.mjs`, committare `questions.enc.json` e pushare. Il file cifrato è network-first: la nuova versione arriva al primo avvio online.
 - **Aggiornare codice/CSS/icone**: alzare `CACHE_NAME` in `service-worker.js`, commit e push. Poi doppio reload; su iPhone chiudere le schede o rimuovere/riaggiungere l'icona se resta la versione vecchia.
-- **Verifica desktop**: DevTools → Application → Manifest (nome, icone, `standalone`, `start_url`), Service Workers (attivo, prova Offline), Cache Storage (`advent-calendar-v15` con `questions.enc.json`, CSS, JS, icone).
+- **Verifica desktop**: DevTools → Application → Manifest (nome, icone, `standalone`, `start_url`), Service Workers (attivo, prova Offline), Cache Storage (`advent-calendar-v16` con `questions.enc.json`, CSS, JS, icone).
 - **Verifica iPhone**: aprire in Safari, inserire la passphrase, controllare lo sblocco; “Aggiungi alla schermata Home”; attivare la modalità aereo e riaprire l'icona. L'app installata può chiedere la passphrase una volta anche se già inserita in Safari (storage separato).
 - **Privacy**: il repo è pubblico, quindi `questions.enc.json` è scaricabile, ma è cifrato AES-GCM con una passphrase che non sta nel repo. Base64 o hash non sarebbero una protezione reale. Per un accesso a prova di estraneo servirebbe un hosting con access control (es. Cloudflare Access), non necessario per un regalo di coppia.
 
