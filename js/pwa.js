@@ -110,7 +110,9 @@ export async function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return null;
 
   try {
-    return await navigator.serviceWorker.register("./service-worker.js", { scope: "./" });
+    const registration = await navigator.serviceWorker.register("./service-worker.js", { scope: "./" });
+    registration.update().catch(() => {});
+    return registration;
   } catch (error) {
     console.warn("Service worker non registrato:", error);
     return null;

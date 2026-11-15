@@ -1,5 +1,5 @@
 // Service worker: shell offline con cache versionata.
-const CACHE_NAME = "advent-calendar-v15";
+const CACHE_NAME = "advent-calendar-v16";
 
 // Percorsi relativi allo script: funzionano anche in una sottocartella di GitHub Pages.
 
@@ -79,7 +79,7 @@ async function networkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
 
   try {
-    const response = await fetch(request);
+    const response = await fetch(request, { cache: "no-store" });
     if (response && response.ok) {
       cache.put(request, response.clone());
     }
