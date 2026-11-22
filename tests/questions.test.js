@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { normalize } from "../js/match.js";
 import { MAX_ANSWER_LENGTH } from "../js/config.js";
+import { isUsableQuestion } from "../js/questions.js";
 
 const ENCRYPTED_PATH = new URL("../questions.enc.json", import.meta.url);
 const PLAIN_PATH = new URL("../questions.json", import.meta.url);
@@ -53,6 +54,30 @@ function validateQuestions(questions) {
       );
     }
 
+    if (item.type !== undefined) {
+      assert.equal(
+        ["open", "choice"].includes(item.type),
+        true,
+        `${label}: type sconosciuto (${item.type})`
+      );
+    }
+
+    if (item.type === "choice") {
+      assert.equal(Array.isArray(item.options), true, `${label}: options non array`);
+      assert.equal(item.options.length >= 2, true, `${label}: servono almeno 2 opzioni`);
+      const options = item.options.map(normalize);
+      assert.equal(
+        new Set(options).size,
+        options.length,
+        `${label}: opzioni duplicate dopo normalizzazione`
+      );
+      assert.equal(
+        options.some((option) => item.answers.map(normalize).includes(option)),
+        true,
+        `${label}: nessuna risposta accettata corrisponde a un'opzione`
+      );
+    }
+
     for (const field of ["feedbackCorrect", "feedbackWrong"]) {
       if (item[field] === undefined) continue;
       assert.equal(typeof item[field], "string", `${label}: ${field} non stringa`);
@@ -83,6 +108,28 @@ test("questions.enc.json ha l'involucro atteso e non contiene domande in chiaro"
   assert.equal(typeof envelope.cipher.data, "string");
   assert.match(raw, /^[\s\S]*"data"/);
   assert.doesNotMatch(raw, /"question"\s*:/);
+});
+
+test("isUsableQuestion valida le domande a scelta multipla", () => {
+  const choice = {
+    day: 1,
+    question: "Dove?",
+    answers: ["Pisa"],
+    hint: "Toscana",
+    type: "choice",
+    options: ["Roma", "Pisa", "Firenze"],
+  };
+
+  assert.equal(isUsableQuestion(choice), true);
+  assert.equal(isUsableQuestion({ ...choice, options: ["Roma", "Firenze"] }), false);
+  assert.equal(isUsableQuestion({ ...choice, options: ["Pisa", "pisa"] }), false);
+  assert.equal(isUsableQuestion({ ...choice, answers: ["Siena"] }), false);
+  assert.equal(isUsableQuestion({ ...choice, type: "quiz" }), false);
+  assert.equal(isUsableQuestion({ ...choice, type: "open" }), true);
+  assert.equal(
+    isUsableQuestion({ ...choice, answers: ["pisa"], options: ["Roma", "Pisa!"] }),
+    true
+  );
 });
 
 test("questions.json in chiaro, quando esiste in locale, resta valido", {

@@ -25,6 +25,7 @@ import { registerServiceWorker, setupInstallHint } from "./pwa.js";
 import { setupIntro } from "./intro.js";
 import { createAlbumImage } from "./album-image.js";
 import { ALBUM_TEXT, FINAL_MESSAGES } from "./final-texts.js";
+import { normalize } from "./match.js";
 
 // getMonth() è 0-based, come in game.js.
 const DECEMBER = 11;
@@ -84,6 +85,10 @@ const dom = {
   questionTitle: $("question-title"),
   attempts: $("attempts"),
   form: $("answer-form"),
+  field: $("answer-field"),
+  choiceFieldset: $("choice-fieldset"),
+  choiceList: $("choice-list"),
+  submitBtn: $("submit-btn"),
   input: $("answer-input"),
   counter: $("counter"),
   hintBtn: $("hint-btn"),
@@ -279,6 +284,31 @@ function closedFeedback(entry, question) {
   return `${message} Nessun punto per questa casella.`;
 }
 
+// Risposta multipla: le opzioni inviano il proprio testo con match esatto.
+function renderChoices(question, entry, closed) {
+  const correct = new Set((question.answers ?? []).map(normalize));
+  const guessed = new Set((entry?.guesses ?? []).map(normalize));
+
+  dom.choiceList.replaceChildren(
+    ...question.options.map((option) => {
+      const value = normalize(option);
+      const isCorrect = correct.has(value);
+      const wasGuessed = guessed.has(value);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "choice";
+      button.textContent = option;
+
+      if (isCorrect && closed) button.classList.add("is-correct");
+      if (wasGuessed && !isCorrect) button.classList.add("is-wrong");
+      if (closed || wasGuessed) button.disabled = true;
+
+      button.addEventListener("click", () => submitValue(option, true));
+      return button;
+    })
+  );
+}
+
 // I punti possibili scendono a metà quando l'indizio è attivo.
 function renderQuestion() {
   if (currentDay === null) return;
@@ -307,7 +337,15 @@ function renderQuestion() {
       : `${attemptsLeft} tentativi rimasti`;
 
   const playable = Boolean(question) && !closed;
+  const isChoice =
+    question?.type === "choice" &&
+    Array.isArray(question.options) &&
+    question.options.length > 1;
+
   dom.form.hidden = !playable;
+  dom.field.hidden = isChoice;
+  dom.choiceFieldset.hidden = !isChoice;
+  dom.submitBtn.hidden = isChoice;
   dom.hintBtn.hidden = !playable || usedHint;
   dom.hintWarning.hidden = !playable || usedHint;
   dom.hintWarning.textContent = `Con l'indizio il massimo scende a ${Math.floor(
@@ -318,7 +356,10 @@ function renderQuestion() {
 
   dom.input.value = "";
   dom.counter.textContent = `0/${MAX_ANSWER_LENGTH}`;
-  dom.input.disabled = !playable;
+  dom.input.disabled = !playable || isChoice;
+
+  if (isChoice) renderChoices(question, entry, closed);
+  else dom.choiceList.replaceChildren();
 
   dom.reveal.hidden = !closed;
   dom.revealText.textContent = closed ? (question?.answers ?? []).join(" · ") : "";
@@ -368,11 +409,16 @@ function bindGrid() {
 // Dopo un invio valido si chiude la tastiera iOS (blur); per gli errori resta il focus.
 function handleSubmit(event) {
   event.preventDefault();
+  submitValue(dom.input.value);
+}
+
+function submitValue(value, exact = false) {
   if (currentDay === null) return;
 
   const now = currentNow();
   const question = questions?.get(currentDay) ?? null;
-  const outcome = submitAnswer(state, currentDay, question, dom.input.value, now);
+  const effective = exact && question ? { ...question, matchMode: "exact" } : question;
+  const outcome = submitAnswer(state, currentDay, effective, value, now);
 
   if (outcome.result.reason === "empty") {
     setFeedback("Scrivi una risposta prima di inviare.", "warn");
@@ -408,6 +454,10 @@ function handleSubmit(event) {
       `${question?.feedbackWrong ?? "Non è quella giusta."} Ti resta un tentativo.`,
       "wrong"
     );
+    if (exact) {
+      const next = dom.choiceList.querySelector("button:not([disabled])");
+      if (next) next.focus({ preventScroll: true });
+    }
   }
 }
 

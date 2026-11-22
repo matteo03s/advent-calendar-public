@@ -78,7 +78,7 @@
             <p class="attempts" id="attempts"></p>
 
             <form class="answer" id="answer-form" novalidate>
-              <div class="field">
+              <div class="field" id="answer-field">
                 <label class="field__label" for="answer-input">la tua risposta</label>
                 <input
                   id="answer-input"
@@ -94,6 +94,12 @@
                 />
                 <p class="field__counter" id="counter">0/60</p>
               </div>
+
+              <fieldset class="choices" id="choice-fieldset" hidden>
+                <legend class="sr-only">Scegli una risposta</legend>
+                <div class="choices__list" id="choice-list"></div>
+              </fieldset>
+
               <button class="btn btn--primary" id="submit-btn" type="submit">Invia</button>
             </form>
 

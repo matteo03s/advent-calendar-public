@@ -1,9 +1,11 @@
 // Domande cifrate: nel repo pubblico va solo il ciphertext, la passphrase non entra in git.
 import { FIRST_DAY, LAST_DAY } from "./config.js";
+import { normalize } from "./match.js";
 
 const QUESTIONS_URL = "./questions.enc.json";
 const KEY_STORAGE = "advent-calendar.questions-key.v1";
 const DEFAULT_ITERATIONS = 310000;
+const QUESTION_TYPES = new Set(["open", "choice"]);
 
 export class QuestionsLockedError extends Error {
   constructor(message = "") {
@@ -27,12 +29,26 @@ function base64ToBytes(value) {
   return bytes;
 }
 
-function isUsable(item) {
+// Valida una domanda: `type` e `options` sono opzionali, le domande senza type restano aperte.
+export function isUsableQuestion(item) {
   if (!item || typeof item !== "object") return false;
   if (!Number.isInteger(item.day) || item.day < FIRST_DAY || item.day > LAST_DAY) return false;
   if (typeof item.question !== "string" || !item.question.trim()) return false;
   if (!Array.isArray(item.answers)) return false;
   if (!item.answers.some((answer) => typeof answer === "string" && answer.trim())) return false;
+  if (item.type !== undefined && !QUESTION_TYPES.has(item.type)) return false;
+
+  if (item.type === "choice") {
+    if (!Array.isArray(item.options) || item.options.length < 2) return false;
+    if (!item.options.every((option) => typeof option === "string" && option.trim())) return false;
+    const options = item.options.map(normalize);
+    if (new Set(options).size !== options.length) return false;
+    const answers = item.answers
+      .filter((answer) => typeof answer === "string" && answer.trim())
+      .map(normalize);
+    if (!answers.some((answer) => options.includes(answer))) return false;
+  }
+
   return true;
 }
 
@@ -50,7 +66,7 @@ function parseQuestions(text) {
 
   const byDay = new Map();
   for (const item of data) {
-    if (!isUsable(item) || byDay.has(item.day)) continue;
+    if (!isUsableQuestion(item) || byDay.has(item.day)) continue;
     byDay.set(item.day, item);
   }
 

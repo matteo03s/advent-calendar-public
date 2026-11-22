@@ -1,5 +1,5 @@
 // Service worker: shell offline con cache versionata.
-const CACHE_NAME = "advent-calendar-v16";
+const CACHE_NAME = "advent-calendar-v17";
 
 // Percorsi relativi allo script: funzionano anche in una sottocartella di GitHub Pages.
 
