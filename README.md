@@ -55,6 +55,21 @@ Lo script chiede la passphrase a terminale (non la mostra mentre la digiti). In 
 
 La passphrase non entra mai nel repo: all'apertura l'app la chiede una volta, salva la chiave derivata solo su quel dispositivo e poi funziona offline. Il file attuale è ancora cifrato con la passphrase demo usata durante lo sviluppo: **rigeneralo con la tua prima di pubblicare**.
 
+Per le domande a scelta multipla basta aggiungere `type` e `options`:
+
+```json
+{
+  "day": 7,
+  "type": "choice",
+  "question": "In quale città si trova la Torre Pendente?",
+  "options": ["Roma", "Pisa", "Firenze", "Siena"],
+  "answers": ["Pisa"],
+  "hint": "È in Toscana, ma non è il capoluogo."
+}
+```
+
+Almeno una risposta in `answers` deve coincidere con un'opzione; l'app mostra i pulsanti, invia l'etichetta scelta con confronto exact e disabilita le opzioni già sbagliate. Le domande senza `type` restano a risposta aperta.
+
 Attenzione alla storia git: `questions.json` è già nei commit precedenti (dati di esempio). Prima di rendere pubblico il repo va rimosso dalla storia con `git filter-repo`/BFG o serve un repository nuovo; cancellarlo in un commit successivo non basta.
 
 ## Prima apertura
@@ -93,7 +108,7 @@ Se il link arriva da WhatsApp o Instagram, la schermata avvisa di riaprirlo in S
 
 Le domande cifrate e `js/final-texts.js` sono network-first: per cambiare domande o scritte dell'album basta rigenerare/pushare, arrivano al primo avvio online. Per il resto del codice, CSS e icone invece bypassa la cache:
 
-1. alza `CACHE_NAME` in `service-worker.js` (es. `advent-calendar-v16` → `v17`);
+1. alza `CACHE_NAME` in `service-worker.js` (es. `advent-calendar-v17` → `v18`);
 2. ricarica due volte (la prima installa il nuovo SW, la seconda serve la cache nuova);
 3. se resta la versione vecchia, forza il controllo con `navigator.serviceWorker.getRegistration().then((r) => r.update())`, cancella i dati del sito da Safari (Impostazioni → Safari → Cancella dati e siti web) oppure rimuovi e riaggiungi l'icona dalla Home.
 

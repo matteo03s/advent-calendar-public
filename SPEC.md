@@ -68,7 +68,9 @@ Il file in chiaro è **locale** (`.gitignore`); il repository e il deploy usano 
 | `answers` | string[] | sì | ≥1 forma accettata, breve |
 | `hint` | string | sì | indizio mostrabile |
 | `points` | number | no | valore della domanda, default `10`; il giorno 20 di esempio vale `20` (bonus) |
-| `matchMode` | string | no | `"contains"` (default) oppure `"exact"` |
+| `type` | string | no | `"open"` (default) oppure `"choice"` per la risposta multipla |
+| `options` | string[] | solo choice | etichette mostrate come pulsanti, ≥2 e senza duplicati |
+| `matchMode` | string | no | `"contains"` (default) oppure `"exact"`; per le choice il confronto è forzato a esatto |
 | `feedbackCorrect` | string | no | messaggio mostrato dopo risposta corretta |
 | `feedbackWrong` | string | no | messaggio mostrato dopo risposta sbagliata |
 
@@ -91,6 +93,22 @@ Regole di redazione delle `answers`:
 - brevi e senza articoli iniziali né apostrofi (`"cinese"`, non `"il ristorante cinese"`): la normalizzazione trasforma l'apostrofo in spazio, quindi `"l'amore"` diventa `"l amore"` e non matcha `"amore"`;
 - usare `matchMode: "exact"` per risposte di 1–2 caratteri, numeri, `"sì"`/`"no"`, dove `contains` darebbe falsi positivi (`"42"` dentro `"142"` non è un problema, ma `"si"` dentro `"simpatico"` sì);
 - non scrivere mai risposte accettate più lunghe di 60 caratteri: l'input utente è limitato a 60, quindi non potrebbero mai matchare.
+
+Esempio di risposta multipla:
+
+```json
+{
+  "day": 7,
+  "type": "choice",
+  "question": "In quale città si trova la Torre Pendente?",
+  "options": ["Roma", "Pisa", "Firenze", "Siena"],
+  "answers": ["Pisa"],
+  "hint": "È in Toscana, ma non è il capoluogo.",
+  "points": 10
+}
+```
+
+Per le choice `answers` resta la fonte di verità: almeno una deve coincidere (dopo normalizzazione) con un'opzione. L'etichetta scelta viene inviata come risposta e il confronto è **sempre exact**, indipendentemente da `matchMode`; i pulsanti già sbagliati si disabilitano e a domanda chiusa viene evidenziata l'opzione corretta.
 
 ### Cifratura e caricamento
 
@@ -268,6 +286,7 @@ Un solo documento, tre viste controllate da `hidden` (nessun routing, nessuna cr
 ### Schermata domanda
 
 - Testo domanda in serif, "Giorno N" e i punti disponibili scritti a mano, contatore "N tentativi rimasti" in corsivo.
+- Se `type: "choice"` il campo di testo è sostituito da pulsanti (`fieldset` + `legend` sr-only), ciascuno alto ≥52px: il tocco invia l'etichetta scelta come risposta exact. Un'opzione già sbagliata viene disabilitata; a domanda chiusa si evidenzia quella corretta. Le domande senza `type` restano aperte.
 - Campo risposta stile quaderno: etichetta visibile "la tua risposta", linea di base al posto del riquadro, placeholder in corsivo, contatore `x/60` allineato a destra. `font-size: 17px` (niente zoom iOS), `enterkeyhint="send"`, invio dal tasto "Vai".
 - **Tastiera iOS**: dopo un invio valido (giusto o sbagliato) `ui.js` chiama `input.blur()`. Per gli errori di validazione il focus resta.
 - Indizio: pulsante con bordo tratteggiato e scritta a mano, avviso con importo dinamico ("Con l'indizio il massimo scende a X punti"). Usato l'indizio, il pulsante sparisce e l'indizio compare in un box tratteggiato.
@@ -367,7 +386,7 @@ Quattro PNG generate con GDI+ (sfondo prugna, albero crema, stella ocra, tronco 
 
 `service-worker.js`, registrato da `js/pwa.js` con `navigator.serviceWorker.register("./service-worker.js", { scope: "./" })`.
 
-- `CACHE_NAME = "advent-calendar-v16"` (versionata a mano a ogni deploy).
+- `CACHE_NAME = "advent-calendar-v17"` (versionata a mano a ogni deploy).
 - `install`: precache di shell, CSS, font, tutti i moduli JS (`ui`, `intro`, `album-image`, `final-texts`, …), `questions.enc.json`, manifest e icone; poi `skipWaiting()`.
 - `activate`: elimina tutte le cache `advent-calendar-*` diverse da quella corrente, poi `clients.claim()`.
 - `fetch`, solo same-origin e solo `GET`:
@@ -402,7 +421,7 @@ Overlay `#install` in `index.html`, mostrato da `js/pwa.js`:
 - Copia di lavoro per il sito: branch locale `public`, che traccia `public/main`; `origin/main` (repo privato) resta archivio della storia completa. Non pushare `--all`/`--mirror` sul remoto pubblico, altrimenti si porta online anche la storia privata.
 - **Aggiornare le domande**: con il branch `public` attivo, modificare `questions.json` locale (ignorato da git), eseguire `node scripts/encrypt-questions.mjs`, committare `questions.enc.json` e pushare. Il file cifrato è network-first: la nuova versione arriva al primo avvio online.
 - **Aggiornare codice/CSS/icone**: alzare `CACHE_NAME` in `service-worker.js`, commit e push. Poi doppio reload; su iPhone chiudere le schede o rimuovere/riaggiungere l'icona se resta la versione vecchia.
-- **Verifica desktop**: DevTools → Application → Manifest (nome, icone, `standalone`, `start_url`), Service Workers (attivo, prova Offline), Cache Storage (`advent-calendar-v16` con `questions.enc.json`, CSS, JS, icone).
+- **Verifica desktop**: DevTools → Application → Manifest (nome, icone, `standalone`, `start_url`), Service Workers (attivo, prova Offline), Cache Storage (`advent-calendar-v17` con `questions.enc.json`, CSS, JS, icone).
 - **Verifica iPhone**: aprire in Safari, inserire la passphrase, controllare lo sblocco; “Aggiungi alla schermata Home”; attivare la modalità aereo e riaprire l'icona. L'app installata può chiedere la passphrase una volta anche se già inserita in Safari (storage separato).
 - **Privacy**: il repo è pubblico, quindi `questions.enc.json` è scaricabile, ma è cifrato AES-GCM con una passphrase che non sta nel repo. Base64 o hash non sarebbero una protezione reale. Per un accesso a prova di estraneo servirebbe un hosting con access control (es. Cloudflare Access), non necessario per un regalo di coppia.
 
