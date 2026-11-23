@@ -288,6 +288,7 @@ function closedFeedback(entry, question) {
 function renderChoices(question, entry, closed) {
   const correct = new Set((question.answers ?? []).map(normalize));
   const guessed = new Set((entry?.guesses ?? []).map(normalize));
+  const failed = entry?.status === "failed";
 
   dom.choiceList.replaceChildren(
     ...question.options.map((option) => {
@@ -299,7 +300,7 @@ function renderChoices(question, entry, closed) {
       button.className = "choice";
       button.textContent = option;
 
-      if (isCorrect && closed) button.classList.add("is-correct");
+      if (isCorrect && failed) button.classList.add("is-correct");
       if (wasGuessed && !isCorrect) button.classList.add("is-wrong");
       if (closed || wasGuessed) button.disabled = true;
 
@@ -361,8 +362,9 @@ function renderQuestion() {
   if (isChoice) renderChoices(question, entry, closed);
   else dom.choiceList.replaceChildren();
 
-  dom.reveal.hidden = !closed;
-  dom.revealText.textContent = closed ? (question?.answers ?? []).join(" · ") : "";
+  const failed = entry?.status === "failed";
+  dom.reveal.hidden = !failed;
+  dom.revealText.textContent = failed ? (question?.answers ?? []).join(" · ") : "";
 
   clearFeedback();
   if (closed) {
