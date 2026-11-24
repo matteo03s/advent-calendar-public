@@ -291,15 +291,24 @@ function renderChoices(question, entry, closed) {
   const failed = entry?.status === "failed";
 
   dom.choiceList.replaceChildren(
-    ...question.options.map((option) => {
+    ...question.options.map((option, index) => {
       const value = normalize(option);
       const isCorrect = correct.has(value);
       const wasGuessed = guessed.has(value);
       const button = document.createElement("button");
       button.type = "button";
       button.className = "choice";
-      button.textContent = option;
 
+      const letter = document.createElement("span");
+      letter.className = "choice__letter";
+      letter.setAttribute("aria-hidden", "true");
+      letter.textContent = String.fromCharCode(65 + index);
+
+      const label = document.createElement("span");
+      label.className = "choice__text";
+      label.textContent = option;
+
+      button.append(letter, label);
       if (isCorrect && failed) button.classList.add("is-correct");
       if (wasGuessed && !isCorrect) button.classList.add("is-wrong");
       if (closed || wasGuessed) button.disabled = true;
